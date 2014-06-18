@@ -12,6 +12,12 @@ if ( !class_exists( 'AdminPageFramework' ) )
     include_once( dirname( __FILE__ ) . '/class/admin-page-framework.php' );
  
 class APF_rediscache extends AdminPageFramework {
+
+    protected $default_server = 'localhost';
+    protected $default_port = '6379';
+    protected $default_pass = '';
+    protected $default_database = '0';
+
     public function setUp() {
                     
         $this->setRootMenuPage( 'Settings' );
@@ -23,24 +29,6 @@ class APF_rediscache extends AdminPageFramework {
         
     }
 
-    public function installation(){
-        
-	// setup wp_options elements on activation 
-	add_option('rediscache_enabled', 's+1pjrWHFAJbGIHkFplDew7lxgT6ZQ0s1ycsv5SemVU=', '', 'no');
-	add_option('rediscache_server', 'P5BtH153FDspFxMqHTZc6wO/1eJr7G9PUevdOJ+P/mM=', '', 'no');
-        add_option('rediscache_port', 'Dqz7s7N+k/QCOS8syQXFd/c/EaL3XmlnSkx2NSWpbk8=', '', 'no');
-        add_option('rediscache_pass', 'k+Qq6h1ORXT0w5ulW441KHDkXTkdXZwnj2QOW2k7zjc=', '', 'no');
-        add_option('rediscache_database', 'rxfzYIkJ5u0n73gWh77FX0akpiHxLwKc/eg2cWbeoao=', '', 'no');
-    }
-
-    public function uninstall(){
-        //remove wp_option rows from the db on removal
-        delete_option('rediscache_enabled');
-        delete_option('rediscache_server');
-	delete_option('rediscache_port');
-	delete_option('rediscache_pass');
-    }
-
     private function encrypt($value){
         try{ include_once(get_home_path().'wp-config.php'); } catch(Exception $e){ echo 'Message: '.$e->getMessage();}
         return trim(base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, DB_NAME, $value, MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND))));
@@ -50,6 +38,26 @@ class APF_rediscache extends AdminPageFramework {
         try{ include_once(get_home_path().'wp-config.php'); } catch(Exception $e){ echo 'Message: '.$e->getMessage();}
         return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, DB_NAME, base64_decode($value), MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND)));
     }
+
+    public function installation(){
+        
+	// setup wp_options elements on activation 
+	add_option('rediscache_enabled', 'no', '', 'no');
+	add_option('rediscache_server', $this->encrypt($default_server), '', 'no');
+        add_option('rediscache_port', $this->encrypt($default_port), '', 'no');
+        add_option('rediscache_pass', $this->encrypt($default_pass), '', 'no');
+        add_option('rediscache_database', $this->encrypt($default_database), '', 'no');
+    }
+
+    public function uninstall(){
+        //remove wp_option rows from the db on removal
+        delete_option('rediscache_enabled');
+        delete_option('rediscache_server');
+        delete_option('rediscache_database');
+	delete_option('rediscache_port');
+	delete_option('rediscache_pass');
+    }
+
 
     private function denied($failure){
         echo "<div class=\"error\">Failed to verify submission: $failure</div>";
